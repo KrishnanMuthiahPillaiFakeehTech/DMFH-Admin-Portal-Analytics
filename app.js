@@ -1,20 +1,31 @@
 const express = require('express');
+const cors = require('cors');
+const config = require('./config.json');
 const { getUserMetrics } = require('./analytics/userMetrics');
 const { getNewUsersByAttribution } = require('./analytics/getNewUsersByAttribution');
 const { getTrafficAcquisition } = require('./analytics/getTrafficAcquisition');
 const { getUsersByCountry } = require('./analytics/getUsersByCountry');
 const { getActiveUsersTrend } = require('./analytics/activeUsersTrend');
-const { getUserActivityByCohort } = require('./analytics/getUserActivityByCohort');
+const { getUserActivityByCohort } = require('./analytics/cohortService');
+const { getViewsByScreen } = require('./analytics/getViewsByScreen');
 
 const app = express();
 const port = 3000;
 
-app.get('/analytics/users', async (req, res) => {
-  const startDate = req.query.from || '7daysAgo';
-  const endDate = req.query.to || 'today';
+// ✅ Enable CORS
+app.use(cors({
+ origin: config.CORS_ORIGIN,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
+app.use(express.json());
+
+// 📊 User Metrics
+app.get('/analytics/users', async (req, res) => {
+  const { from = '7daysAgo', to = 'today' } = req.query;
   try {
-    const metrics = await getUserMetrics(startDate, endDate);
+    const metrics = await getUserMetrics(from, to);
     res.json(metrics);
   } catch (err) {
     console.error('User metrics error:', err.message);
@@ -22,63 +33,52 @@ app.get('/analytics/users', async (req, res) => {
   }
 });
 
-
+// 🎯 New Users by Attribution
 app.get('/analytics/new-users-attribution', async (req, res) => {
-  const startDate = req.query.from || '7daysAgo';
-  const endDate = req.query.to || 'today';
-  const dimension = req.query.dimension || 'firstUserDefaultChannelGroup'; // default fallback
-
+  const { from = '7daysAgo', to = 'today', dimension = 'firstUserDefaultChannelGroup' } = req.query;
   try {
-    const data = await getNewUsersByAttribution(dimension, startDate, endDate);
-    res.json({ from: startDate, to: endDate, dimension, data });
+    const data = await getNewUsersByAttribution(dimension, from, to);
+    res.json({ from, to, dimension, data });
   } catch (err) {
-    console.error('Error fetching attribution data:', err.message);
+    console.error('Attribution error:', err.message);
     res.status(500).json({ error: 'Failed to fetch attribution data' });
   }
 });
 
+// 🚦 Traffic Acquisition
 app.get('/analytics/traffic', async (req, res) => {
-  const startDate = req.query.from || '7daysAgo';
-  const endDate = req.query.to || 'today';
-  const dimension = req.query.dimension;
-  const metric = req.query.metric || 'sessions';
+  const { from = '7daysAgo', to = 'today', dimension, metric = 'sessions' } = req.query;
 
   if (!dimension) {
     return res.status(400).json({ error: 'Missing required "dimension" query param' });
   }
 
   try {
-    const data = await getTrafficAcquisition(dimension, metric, startDate, endDate);
-    res.json({ from: startDate, to: endDate, dimension, metric, data });
+    const data = await getTrafficAcquisition(dimension, metric, from, to);
+    res.json({ from, to, dimension, metric, data });
   } catch (err) {
     console.error('Traffic acquisition error:', err.message);
     res.status(500).json({ error: 'Failed to fetch traffic acquisition data' });
   }
 });
 
-
+// 🌍 Users by Country
 app.get('/analytics/user-country', async (req, res) => {
-  const startDate = req.query.from || '2025-05-10';
-  const endDate = req.query.to || '2025-06-10';
-  const metric = req.query.metric || 'activeUsers'; // Note: use singular "metric"
-
+  const { from = '2025-05-10', to = '2025-06-10', metric = 'activeUsers' } = req.query;
   try {
-    const data = await getUsersByCountry(metric, startDate, endDate);
-    res.json({ from: startDate, to: endDate, dimension: 'country', metric, data });
-  } catch (error) {
+    const data = await getUsersByCountry(metric, from, to);
+    res.json({ from, to, dimension: 'country', metric, data });
+  } catch (err) {
+    console.error('Country error:', err.message);
     res.status(500).json({ error: 'Failed to fetch user breakdown by country' });
   }
 });
 
-
-
-
+// 📈 Active Users Trend
 app.get('/analytics/active-users-trend', async (req, res) => {
-  const startDate = req.query.from || '2025-05-10';
-  const endDate = req.query.to || '2025-06-10';
-
+  const { from = '2025-05-10', to = '2025-06-10' } = req.query;
   try {
-    const data = await getActiveUsersTrend(startDate, endDate);
+    const data = await getActiveUsersTrend(from, to);
     res.json(data);
   } catch (err) {
     console.error('Active users trend error:', err.message);
@@ -86,22 +86,31 @@ app.get('/analytics/active-users-trend', async (req, res) => {
   }
 });
 
-
-
-app.get('/analytics/user-cohorts', async (req, res) => {
-  const startDate = req.query.from || '2025-05-10';
-  const endDate = req.query.to || '2025-06-14';
-
+// 🔁 Cohort Retention
+app.get('/api/cohort-retention', async (req, res) => {
+  const { from = '2025-05-10', to = '2025-06-10' } = req.query;
   try {
-    const data = await getUserActivityByCohort(startDate, endDate);
-    res.json(data);
+    const result = await getUserActivityByCohort(from, to);
+    res.json(result);
   } catch (err) {
-    console.error('Cohort report error:', err);
-    res.status(500).json({ error: 'Failed to fetch cohort data' });
+    console.error('Cohort retention error:', err.message);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
 
+// 📺 Views by Screen
+app.get('/analytics/views-by-screen', async (req, res) => {
+  const { from = '2025-06-01', to = '2025-06-17' } = req.query;
+  try {
+    const data = await getViewsByScreen(from, to);
+    res.json({ from, to, data });
+  } catch (err) {
+    console.error('Views by screen error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch views by screen', details: err.message });
+  }
+});
 
+// 🟢 Server Running
 app.listen(port, () => {
   console.log(`✅ Analytics API is running at http://localhost:${port}`);
 });
