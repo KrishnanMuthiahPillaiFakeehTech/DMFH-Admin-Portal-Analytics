@@ -6,8 +6,12 @@ const { getNewUsersByAttribution } = require('./analytics/getNewUsersByAttributi
 const { getTrafficAcquisition } = require('./analytics/getTrafficAcquisition');
 const { getUsersByCountry } = require('./analytics/getUsersByCountry');
 const { getActiveUsersTrend } = require('./analytics/activeUsersTrend');
-const { getUserActivityByCohort } = require('./analytics/cohortService');
-const { getViewsByScreen } = require('./analytics/getViewsByScreen');
+const { getEventsByName } = require('./analytics/getEventsByName');
+const { getKeyEventsByName } = require('./analytics/getKeyEventsByName');
+const { getMetricByPlatform } = require('./analytics/getMetricByPlatform');
+
+
+
 
 const app = express();
 const port = 3000;
@@ -86,29 +90,52 @@ app.get('/analytics/active-users-trend', async (req, res) => {
   }
 });
 
-// 🔁 Cohort Retention
-app.get('/api/cohort-retention', async (req, res) => {
-  const { from = '2025-05-10', to = '2025-06-10' } = req.query;
+
+
+app.get('/analytics/event-count', async (req, res) => {
+  const startDate = req.query.from || '2025-05-01';
+  const endDate = req.query.to || '2025-06-17';
+  const limit = req.query.limit || 10;
+
   try {
-    const result = await getUserActivityByCohort(from, to);
-    res.json(result);
+    const data = await getEventsByName(startDate, endDate, limit);
+    res.json({ from: startDate, to: endDate, limit: parseInt(limit), data });
   } catch (err) {
-    console.error('Cohort retention error:', err.message);
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+    console.error('Event count error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch event counts', details: err.message });
   }
 });
 
-// 📺 Views by Screen
-app.get('/analytics/views-by-screen', async (req, res) => {
-  const { from = '2025-06-01', to = '2025-06-17' } = req.query;
+app.get('/analytics/key-events', async (req, res) => {
+  const startDate = req.query.from || '2025-05-01';
+  const endDate = req.query.to || '2025-06-17';
+  const limit = req.query.limit || 10;
+
   try {
-    const data = await getViewsByScreen(from, to);
-    res.json({ from, to, data });
+    const data = await getKeyEventsByName(startDate, endDate, limit);
+    res.json({ from: startDate, to: endDate, limit: parseInt(limit), data });
   } catch (err) {
-    console.error('Views by screen error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch views by screen', details: err.message });
+    console.error('Key events error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch key events', details: err.message });
   }
 });
+
+app.get('/analytics/metric-by-platform', async (req, res) => {
+  const startDate = req.query.from || '7daysAgo';
+  const endDate = req.query.to || 'today';
+  const metric = req.query.metric || 'eventCount'; // 🟢 Pass: eventCount, keyEvents, totalRevenue
+
+  try {
+    const data = await getMetricByPlatform(startDate, endDate, metric);
+    res.json({ from: startDate, to: endDate, metric, data });
+  } catch (err) {
+    console.error('Metric by platform error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch data', details: err.message });
+  }
+});
+
+
+
 
 // 🟢 Server Running
 app.listen(port, () => {
