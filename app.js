@@ -9,9 +9,9 @@ const { getActiveUsersTrend } = require('./analytics/activeUsersTrend');
 const { getEventsByName } = require('./analytics/getEventsByName');
 const { getKeyEventsByName } = require('./analytics/getKeyEventsByName');
 const { getMetricByPlatform } = require('./analytics/getMetricByPlatform');
-
-
-
+const { getUsersByOS } = require('./analytics/getUsersByOS');
+const { getUsersByPlatformDeviceCategory } = require('./analytics/getUsersByPlatformDeviceCategory');
+const { getViewsVsEventCountTrend } = require('./analytics/viewsVsEventCount');
 
 const app = express();
 const port = 3000;
@@ -136,6 +136,49 @@ app.get('/analytics/metric-by-platform', async (req, res) => {
 
 
 
+app.get('/analytics/users-by-os', async (req, res) => {
+  const startDate = req.query.from || '2025-05-10';
+  const endDate = req.query.to || '2025-06-10';
+  const metric = req.query.metric || 'activeUsers'; // can be 'newUsers' or 'activeUsers'
+
+  try {
+    const data = await getUsersByOS(metric, startDate, endDate);
+    res.json({ from: startDate, to: endDate, metric, data });
+  } catch (err) {
+    res.status(500).json({ error: `Failed to fetch ${metric} by OS` });
+  }
+});
+
+app.get('/analytics/users-by-platform-device', async (req, res) => {
+  const startDate = req.query.from || '2025-05-10';
+  const endDate = req.query.to || '2025-06-10';
+  const metric = req.query.metric || 'activeUsers'; // allow 'newUsers' or 'activeUsers'
+
+  try {
+    const data = await getUsersByPlatformDeviceCategory(startDate, endDate, metric);
+    res.json({ from: startDate, to: endDate, metric, data });
+  } catch (err) {
+    console.error('Error fetching users by platform/device:', err.message);
+    res.status(500).json({ error: 'Failed to fetch users by platform and device category' });
+  }
+});
+
+
+
+
+
+app.get('/analytics/views-events-trend', async (req, res) => {
+  const from = req.query.from || '2025-05-10';
+  const to = req.query.to || '2025-06-10';
+
+  try {
+    const result = await getViewsVsEventCountTrend(from, to);
+    res.json(result); 
+  } catch (err) {
+    console.error('Views vs EventCount API error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch views vs event count trend' });
+  }
+});
 
 // 🟢 Server Running
 app.listen(port, () => {
