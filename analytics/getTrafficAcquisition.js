@@ -1,8 +1,7 @@
-const { analyticsDataClient, PROPERTY_ID } = require('./client');
+const { runReportWithThrottle } = require('../client/gaClient');
 
 async function getTrafficAcquisition(dimName, metricName, startDate, endDate) {
-  const [response] = await analyticsDataClient.runReport({
-    property: `properties/${PROPERTY_ID}`,
+  const [response] = await runReportWithThrottle({
     dateRanges: [{ startDate, endDate }],
     dimensions: [{ name: dimName }],
     metrics: [{ name: metricName }],
