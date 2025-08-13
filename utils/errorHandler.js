@@ -1,27 +1,27 @@
 function errorHandler(err, req, res, _next) {
   const route = `${req.method} ${req.originalUrl}`;
+  const routeName = req.meta?.name || 'Unknown Route';
 
-  console.error(`❌ API Error at ${route}`);
-  console.error('Message:', err.message);
-  if (err.stack) console.error('Stack:', err.stack);
+  console.error(`❌ [${routeName}] ${route}`);
+  console.error(`   → Error: ${err.message}`);
+  if (err.stack) console.error(`   → Stack:\n${err.stack}`);
 
-  // Handle GA quota exceeded
+  // GA quota exceeded
   if (err.code === 8 || err.message.includes('RESOURCE_EXHAUSTED')) {
     return res.status(429).json({
-      error: 'Google Analytics quota exceeded',
-      route,
-      cause: 'RESOURCE_EXHAUSTED',
+      error: 'Google Analytics quota exceeded. Please try again later.',
+      code: 'RESOURCE_EXHAUSTED',
+      route: routeName,
       message: err.message,
       stack: err.stack
     });
   }
 
-  // Generic error
+  // General error
   res.status(500).json({
     error: 'Internal Server Error',
-    route,
-    cause: err.code || 'UNKNOWN',
     message: err.message,
+    route: routeName,
     stack: err.stack
   });
 }
