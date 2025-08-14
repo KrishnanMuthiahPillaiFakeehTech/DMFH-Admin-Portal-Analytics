@@ -12,7 +12,8 @@
     "@google-analytics/data": "^5.1.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "p-limit": "^2.3.0"
   },
   "description": ""
 }

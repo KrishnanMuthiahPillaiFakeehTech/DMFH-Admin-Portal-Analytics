@@ -1,9 +1,9 @@
-const { analyticsDataClient, PROPERTY_ID } = require('./client');
-const { formatDate, formatDuration } = require('../utils');
+
+const { formatDate, formatDuration } = require('../utils/utils');
+const { runReportWithThrottle } = require('../client/gaClient');
 
 async function getUserMetrics(startDate, endDate) {
-  const [response] = await analyticsDataClient.runReport({
-    property: `properties/${PROPERTY_ID}`,
+  const [response] = await runReportWithThrottle({
     dateRanges: [{ startDate, endDate }],
     dimensions: [{ name: 'date' }],
     metrics: [

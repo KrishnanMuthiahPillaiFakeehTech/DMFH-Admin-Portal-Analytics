@@ -1,12 +1,11 @@
-const { analyticsDataClient, PROPERTY_ID } = require('./client');
+const { runReportWithThrottle } = require('../client/gaClient');
 
 async function getUsersByCountry(metricName, startDate, endDate) {
   if (!['activeUsers', 'newUsers'].includes(metricName)) {
     throw new Error(`Unsupported metric: ${metricName}`);
   }
 
-  const [response] = await analyticsDataClient.runReport({
-    property: `properties/${PROPERTY_ID}`,
+  const [response] = await runReportWithThrottle({
     dateRanges: [{ startDate, endDate }],
     dimensions: [{ name: 'country' }],
     metrics: [{ name: metricName }],
