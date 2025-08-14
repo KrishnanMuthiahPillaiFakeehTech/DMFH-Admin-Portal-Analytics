@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config.json');
 const registerRoutes = require('./routes');
+const errorHandler = require('./utils/errorHandler');
 
 const app = express();
 const port = 3000;
@@ -18,6 +19,8 @@ app.use(express.json());
 
 // Register all API routes
 registerRoutes(app);
+
+app.use(errorHandler);
 
 // Catch-all 404 handler
 app.use((req, res) => {
