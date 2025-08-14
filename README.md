@@ -28,9 +28,16 @@ npm install
    ```
 
 3. **Add required configuration files**  
-   Place the following files in the project root directory (these are attached in the email):  
+   Place the following files in the project root directory:  
    - `config.json`  
-     - Ensure you add the `GA4_PROPERTY_ID` inside the `config.json` file.  
+     - Create the `config.json` file with the following structure and ensure you replace "YOUR ID" with the actual `GA4_PROPERTY_ID`:  
+       ```json
+       {
+         "GA4_PROPERTY_ID": "YOUR ID",
+         "CORS_ORIGIN": "http://localhost:8080"
+       }
+       ```
+     - **Explanation**: The `CORS_ORIGIN` field is required to configure Cross-Origin Resource Sharing (CORS), which allows the API to accept requests from the specified origin (e.g., `http://localhost:8080`). This is necessary because web browsers enforce the Same-Origin Policy, restricting cross-origin HTTP requests for security reasons. By setting `CORS_ORIGIN`, the server explicitly permits the frontend running on that origin (e.g., a local development server) to access the API, preventing CORS errors during development or integration.
    - `service-account.json`  
      - Obtain the `service-account.json` file from the Firebase Cloud Console and place it in the project root directory.
 
